@@ -150,55 +150,60 @@ def main():
     print("下載最新市場數據中...")
     ETH = yf.download('ETH-USD', period='180d', interval='4h')
     BTC = yf.download('BTC-USD', period='180d', interval='4h')
-    
+
+    # 新增：取得執行時間並建立子資料夾
+    run_time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    run_results_dir = os.path.join(RESULTS_DIR, run_time_str)
+    os.makedirs(run_results_dir, exist_ok=True)
+
     # 檢查數據是否下載成功
     if ETH.empty or BTC.empty:
         print("數據下載失敗，請檢查網路連接")
         return
-    
+
     # 添加技術指標
     ETH = add_technical_indicators(ETH)
     BTC = add_technical_indicators(BTC)
-    
+
     # 創建特徵資料框
     features = create_features_df(ETH, BTC)
-    
+
     # 檢查特徵資料框是否為空
     if features is None:
         return
-    
+
     # 標準化數據
     scaler = MinMaxScaler()
     scaled = scaler.fit_transform(features)
-    
+
     # 準備序列數據
     X = []
     for i in range(len(scaled) - SEQ_LEN - 1):
         X.append(scaled[i:(i+SEQ_LEN)])
     X = np.array(X)
-    
+
     # 載入模型
     print("載入模型中...")
     model = load_latest_model()
     if model is None:
         print("沒有找到可用的模型，請先訓練模型")
         return
-    
+
     # 獲取最後一個序列
     last_sequence = scaled[-SEQ_LEN:]
     last_sequence = last_sequence.reshape(1, SEQ_LEN, -1)
-    
+
     # 預測未來價格
     print("預測未來價格中...")
     predictions = generate_future_predictions(model, last_sequence, scaler, steps=PREDICTION_STEPS)
-    
+
     # 逆轉換預測值
     predictions = scaler.inverse_transform(np.hstack([predictions.reshape(-1, 1), np.zeros((len(predictions), features.shape[1] - 1))]))[:, 0]
-    
+
     # 獲取當前時間和價格
     current_time = features.index[-1]
     current_price = features['ETH_Close'].iloc[-1]
-    
+
     # 生成交易訊號
     signals = []
     for pred in predictions:
@@ -219,7 +224,7 @@ def main():
             else:
                 signal = "中立"
         signals.append(signal)
-    
+
     # 輸出結果
     print(f"\n預測結果:")
     print(f"當前時間: {current_time}")
@@ -228,19 +233,19 @@ def main():
     for i, pred in enumerate(predictions, 1):
         future_time = current_time + pd.Timedelta(hours=4 * i)
         print(f"{i}個4小時後 ({future_time}): {pred:.2f} USD")
-    
+
     print("\n交易訊號:")
     for i, signal in enumerate(signals, 1):
         print(f"{i}個4小時後: {signal}")
-    
+
     # 繪製圖表
     plt.figure(figsize=(14, 6))
     plt.plot(features.index, features['ETH_Close'], label='Historical ETH Price', color='blue')
-    
+
     # 確保預測時間和數據形狀匹配
     future_times = [current_time + pd.Timedelta(hours=4 * i) for i in range(1, PREDICTION_STEPS + 1)]
     predictions = predictions[:PREDICTION_STEPS]
-    
+
     plt.plot(future_times, predictions, label='Future Predictions', color='red', linestyle='--')
     plt.title('ETH Price Prediction')
     plt.xlabel('Time')
@@ -248,9 +253,9 @@ def main():
     plt.legend()
     plt.tight_layout()
     plt.gcf().autofmt_xdate()
-    plt.savefig('eth_future_prediction.png')
+    plt.savefig(os.path.join(run_results_dir, 'eth_future_prediction.png'))
     plt.close()
-    
+
     # 保存預測結果為JSON
     prediction_data = []
     for i in range(len(predictions)):
@@ -260,11 +265,11 @@ def main():
             "價格變化": f"{(predictions[i] - current_price):.2f} USD",
             "交易訊號": signals[i]
         })
-    
-    with open(os.path.join(RESULTS_DIR, 'prediction_results.json'), 'w', encoding='utf-8') as f:
+
+    with open(os.path.join(run_results_dir, 'prediction_results.json'), 'w', encoding='utf-8') as f:
         json.dump(prediction_data, f, ensure_ascii=False, indent=4)
-    
-    print(f"\n分析結果已保存至 {RESULTS_DIR} 目錄")
+
+    print(f"\n分析結果已保存至 {run_results_dir} 目錄")
 
 if __name__ == "__main__":
     main()

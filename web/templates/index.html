@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>ETH 預測歷史結果</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="/">
+      <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png?v=032" alt="ETH Logo" width="36" height="36" class="me-2">
+      <span class="fw-bold">ETH Futures Prediction Dashboard</span>
+    </a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" href="/">歷史結果</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-6 mb-2">
+            <button id="run-predict" class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center" type="button">
+                <i class="bi bi-lightning-charge me-2"></i> 執行預測
+            </button>
+            <small class="text-muted ms-1">產生新的 ETH 價格預測與交易訊號</small>
+        </div>
+        <div class="col-md-6 mb-2">
+            <button id="run-backtest" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center" type="button">
+                <i class="bi bi-graph-up-arrow me-2"></i> 訓練/回測模型
+            </button>
+            <small class="text-muted ms-1">訓練 LSTM 模型並回測策略績效</small>
+        </div>
+    </div>
+    <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="predict-tab" data-bs-toggle="tab" data-bs-target="#predict" type="button" role="tab" aria-controls="predict" aria-selected="true">預測結果</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="backtest-tab" data-bs-toggle="tab" data-bs-target="#backtest" type="button" role="tab" aria-controls="backtest" aria-selected="false">回測結果</button>
+      </li>
+    </ul>
+    <div class="tab-content mt-4" id="resultTabsContent">
+      <div class="tab-pane fade show active" id="predict" role="tabpanel" aria-labelledby="predict-tab">
+        <h4>ETH 預測歷史結果</h4>
+        <ul class="list-group mt-2">
+            {% if runs %}
+                {% for run in runs %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ run }}</span>
+                        <a href="/result/{{ run }}" class="btn btn-primary btn-sm">查看詳細</a>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <li class="list-group-item">目前沒有任何歷史結果。</li>
+            {% endif %}
+        </ul>
+      </div>
+      <div class="tab-pane fade" id="backtest" role="tabpanel" aria-labelledby="backtest-tab">
+        <h4>ETH 回測歷史結果</h4>
+        <ul class="list-group mt-2" id="backtest-list">
+    <li class="list-group-item">載入中...</li>
+</ul>
+      </div>
+    </div>
+</div>
+<!-- Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script>
+// 按鈕 loading 與呼叫 FastAPI
+function setLoading(btn, loading) {
+    if (loading) {
+        btn.setAttribute('disabled', 'disabled');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + btn.dataset.loadingText;
+    } else {
+        btn.removeAttribute('disabled');
+        btn.innerHTML = btn.dataset.defaultText;
+    }
+}
+
+function runAction(btnId, api, defaultText, loadingText) {
+    const btn = document.getElementById(btnId);
+    btn.dataset.defaultText = btn.innerHTML;
+    btn.dataset.loadingText = loadingText;
+    btn.addEventListener('click', function() {
+        setLoading(btn, true);
+        fetch(api, {method: 'POST'})
+            .then(res => res.json())
+            .then(data => {
+                setLoading(btn, false);
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('執行失敗：' + (data.detail || '未知錯誤'));
+                }
+            })
+            .catch(err => {
+                setLoading(btn, false);
+                alert('執行失敗：' + err);
+            });
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    runAction('run-predict', '/run-predict', '執行預測', '執行中...');
+    runAction('run-backtest', '/run-backtest', '訓練/回測模型', '執行中...');
+});
+// 載入回測結果列表
+function loadBacktestList() {
+    fetch('/api/backtest_runs')
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('backtest-list');
+            list.innerHTML = '';
+            if (data.runs && data.runs.length > 0) {
+                data.runs.forEach(run => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.innerHTML = `<span>${run}</span><a href="/backtest/${run}" class="btn btn-primary btn-sm">查看詳細</a>`;
+                    list.appendChild(li);
+                });
+            } else {
+                list.innerHTML = '<li class="list-group-item">目前沒有任何回測結果。</li>';
+            }
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    runAction('run-predict', '/run-predict', '執行預測', '執行中...');
+    runAction('run-backtest', '/run-backtest', '訓練/回測模型', '執行中...');
+    // 只在回測Tab被點擊時載入
+    var backtestTab = document.getElementById('backtest-tab');
+    var loaded = false;
+    backtestTab.addEventListener('shown.bs.tab', function (event) {
+        if (!loaded) {
+            loadBacktestList();
+            loaded = true;
+        }
+    });
+    // 若預設就顯示回測Tab，也要載入
+    if (backtestTab.classList.contains('active')) {
+        loadBacktestList();
+        loaded = true;
+    }
+});
+</script>
+</body>
+</html>
