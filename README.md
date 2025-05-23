@@ -1,192 +1,183 @@
-# ETH 期貨預測與交易系統
+# 以深度學習驅動的以太坊量化交易系統
 
-基於 LSTM 神經網路的 ETH 期貨價格預測和回測系統。
+## 專案摘要
 
-## 專案結構
+此專案為一套完整的以太坊(ETH)量化交易解決方案，透過深度學習技術建立預測模型並實現策略回測框架。本系統結合了LSTM神經網路、技術分析指標與跨資產相關性分析，旨在捕捉加密貨幣市場的非線性模式並產生具有統計優勢的交易信號。
+
+### 為何適合「優式AI量化新星計畫 2025」
+
+本專案完美對應UC Capital實習需求：
+- **量化交易實踐**：從原始市場數據到可執行交易策略的完整工作流程
+- **深度學習應用**：運用LSTM架構建立時間序列預測模型
+- **策略回測**：嚴謹的策略評估框架與績效指標視覺化
+- **跨資產分析**：結合BTC與ETH數據以提升預測準確性
+- **全端系統**：整合後端算法與前端視覺化介面的完整解決方案
+
+## 核心技術與功能
+
+### 量化模型設計
+- LSTM神經網路架構用於捕捉價格時間序列的長短期依賴關係
+- 融合跨資產數據(ETH+BTC)以提高預測穩定性
+- 滾動時間窗口訓練與預測模式確保模型適應性
+- 動態閾值調整的交易信號生成機制
+
+### 回測系統與績效評估
+- 完整的策略回測框架，支持做多/做空策略
+- 關鍵績效指標計算與視覺化：
+  - 累積報酬率曲線
+  - 信號準確率分析
+  - 單筆交易盈虧分布
+- 交易信號與價格走勢疊加圖表
+
+### 網頁應用與視覺化
+- FastAPI打造的高效後端服務
+- Bootstrap響應式前端設計
+- 即時模型訓練與回測執行
+- 歷史回測結果瀏覽與比較
+
+## 系統架構
 
 ```
 .
-├── src/
-│   ├── eth_future_prediction.py   # ETH 期貨預測模型
-│   └── lstm_backtest.py          # 回測系統
-├── web/
-│   ├── main.py                   # FastAPI 網頁伺服器
-│   ├── static/                   # 網頁靜態檔案
-│   └── templates/
-│       ├── index.html           # 主頁面
-│       ├── backtest_detail.html # 回測結果頁面
-│       └── result_detail.html   # 預測結果頁面
-├── backtest_results/            # 存放回測結果
-│   └── [timestamp]/
-│       ├── equity_curve.png     # 權益曲線圖
-│       ├── eth_price_signals.png # 價格信號圖
-│       ├── backtest_performance.json # 回測績效資料
-│       ├── lstm_model.keras     # LSTM 模型檔案
-│       └── backtest_data.csv    # 回測數據
-└── models/                      # 訓練好的 LSTM 模型
+├── src/                         # 核心算法模組
+│   ├── eth_future_prediction.py # ETH預測模型
+│   └── lstm_backtest.py         # 策略回測引擎
+├── web/                         # 網頁應用框架
+│   ├── main.py                  # FastAPI服務
+│   ├── static/                  # 靜態資源
+│   └── templates/               # 前端模板
+├── backtest_results/            # 回測結果存儲
+│   └── [timestamp]/             # 時間戳分類
+│       ├── equity_curve.png     # 權益曲線
+│       ├── eth_price_signals.png# 價格信號圖
+│       ├── backtest_performance.json # 績效指標
+│       ├── lstm_model.keras     # 訓練模型
+│       └── backtest_data.csv    # 交易數據
+└── models/                      # 模型庫
+```
 
-## 主要功能
+## 技術實現細節
 
-- 基於 LSTM 神經網路的 ETH 期貨價格即時預測
-- 整合比特幣價格數據以提高預測準確性
-- 技術指標分析（包括 RSI、MACD、布林帶等）
-- 完整的回測系統
-- 圖形化網頁介面進行模型訓練和回測
-- 交易信號和績效指標的視覺化展示
-- 自動組織和顯示結果
+### 數據處理與特徵工程
+- **多時間尺度特徵**：結合4小時K線與移動平均指標
+- **跨資產關聯**：引入BTC價格數據作為輔助特徵
+- **標準化處理**：MinMaxScaler確保數據尺度一致性
+- **序列構建**：72小時(18個時間窗口)的滑動窗口序列化
 
-## 系統需求
+### 深度學習模型
+- **LSTM架構**：64個神經元的單層LSTM網絡
+- **Dropout正則化**：0.2的丟棄率防止過擬合
+- **早停機制**：基於驗證集損失的模型訓練自動停止
+- **批量訓練**：批量大小32優化訓練效率
 
-- Python 3.9+
-- FastAPI
-- TensorFlow
-- yfinance
-- pandas
-- numpy
-- scikit-learn
-- ta（技術分析庫）
-- matplotlib
+### 交易策略邏輯
+- **預測比較信號**：預測價格與當前價格差異驅動的交易決策
+- **雙向策略**：支持做多(看漲)與做空(看跌)操作
+- **模型持久化**：訓練模型保存與載入機制
 
-## 安裝設置
+### 結果呈現與分析
+- **自動數據同步**：結果自動歸類與網頁同步
+- **多維度視覺化**：權益曲線、信號疊加圖等多種圖表
+- **性能指標JSON**：標準化的績效數據導出
 
-1. 克隆專案庫
-2. 安裝依賴套件：
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. 啟動網頁伺服器：
-   ```bash
-   cd web
-   uvicorn main:app --reload
-   ```
+## 技術棧
 
-## 使用方法
+- **Python 3.9+**: 核心程式語言
+- **TensorFlow/Keras**: 深度學習框架
+- **FastAPI**: 網頁後端服務
+- **Pandas/NumPy**: 數據處理
+- **Matplotlib**: 數據視覺化
+- **yfinance**: 市場數據獲取
+- **Bootstrap**: 前端框架
 
-1. 在瀏覽器中訪問 `http://localhost:8000`
-2. 使用訓練按鈕訓練新的 LSTM 模型
-3. 使用回測按鈕執行回測
-4. 在回測結果頁面查看詳細結果
+## 專案亮點與創新
 
-## 檔案組織
+1. **端到端解決方案**：從數據獲取、模型訓練到策略回測的完整流程
+2. **跨資產關聯性**：利用BTC與ETH之間的相關性提升預測效果
+3. **模型持久化與復用**：訓練模型的保存與載入機制增強系統效率
+4. **即時執行與視覺化**：網頁界面支持一鍵執行複雜算法並視覺化結果
+5. **分類存儲系統**：結構化的結果存儲與管理機制
 
-- 系統會根據時間戳自動組織結果
-- 回測結果存放在 `backtest_results/[timestamp]/`
-- 包含的檔案：
-  - 權益曲線圖
-  - 價格和信號圖表
-  - JSON 格式的績效指標
-  - 訓練好的模型
-  - 交易數據
+## 發展潛力與未來計劃
 
-## API 端點
-
-- `/run-predict`: 執行 ETH 價格預測
-- `/run-backtest`: 執行回測
-- `/`: 主頁面
-- `/backtest/{run_id}`: 回測結果詳細頁面
-- `/result/{run_id}`: 預測結果詳細頁面
-
-## 注意事項
-
-- 系統使用 72 小時的序列長度進行預測
-- 預測時間範圍為未來 48 小時（12 個 4 小時週期）
-- 交易信號根據可配置的閾值生成
-- 所有結果會自動同步到網頁介面
+- 擴展支持更多加密貨幣與傳統資產
+- 整合更多技術指標與基本面數據
+- 引入強化學習優化交易策略
+- 開發實時交易API連接功能
+- 建立策略組合與風險管理框架
 
 ---
 
-# ETH Price Prediction and Trading System
+# Deep Learning-Powered Ethereum Quantitative Trading System
 
-A web-based system for Ethereum price prediction and backtesting using LSTM neural networks.
+## Project Summary
 
-## Project Structure
+This project presents a comprehensive Ethereum (ETH) quantitative trading solution, leveraging deep learning techniques to build predictive models and implement a strategy backtesting framework. The system combines LSTM neural networks, technical indicators, and cross-asset correlation analysis to capture non-linear patterns in cryptocurrency markets and generate statistically advantageous trading signals.
 
-```
-.
-├── src/
-│   ├── eth_future_prediction.py   # ETH price prediction model
-│   └── lstm_backtest.py          # Backtesting system
-├── web/
-│   ├── main.py                   # FastAPI web server
-│   ├── static/                   # Static files for web interface
-│   └── templates/
-│       ├── index.html           # Main page
-│       ├── backtest_detail.html # Backtest results view
-│       └── result_detail.html   # Prediction results view
-├── backtest_results/            # Stores backtest results
-│   └── [timestamp]/
-│       ├── equity_curve.png
-│       ├── eth_price_signals.png
-│       ├── backtest_performance.json
-│       ├── lstm_model.keras
-│       └── backtest_data.csv
-└── models/                      # Trained LSTM models
-```
+### Why It's Ideal for UC Capital's AI Quantitative Trading Internship 2025
 
-## Features
+This project perfectly aligns with UC Capital's internship requirements:
+- **Quantitative Trading Implementation**: Complete workflow from raw market data to executable trading strategies
+- **Deep Learning Application**: LSTM architecture for time series prediction modeling
+- **Strategy Backtesting**: Rigorous strategy evaluation framework and performance metrics visualization
+- **Cross-Asset Analysis**: Integration of BTC and ETH data to enhance prediction accuracy
+- **Full-Stack System**: Complete solution integrating backend algorithms and frontend visualization interfaces
 
-- Real-time Ethereum price prediction using LSTM neural networks
-- Integration with Bitcoin price data for better prediction accuracy
-- Technical indicators including RSI, MACD, and Bollinger Bands
-- Comprehensive backtesting system
-- Web interface for model training and backtesting
-- Visualization of trading signals and performance metrics
-- Automatic result organization and display
+## Core Technologies and Features
 
-## Requirements
+### Quantitative Model Design
+- LSTM neural network architecture for capturing long and short-term dependencies in price time series
+- Cross-asset data fusion (ETH+BTC) for improved prediction stability
+- Rolling time window training and prediction mode ensuring model adaptability
+- Dynamic threshold adjustment for trade signal generation
 
-- Python 3.9+
-- FastAPI
-- TensorFlow
-- yfinance
-- pandas
-- numpy
-- scikit-learn
-- ta (Technical Analysis library)
-- matplotlib
+### Backtesting System and Performance Evaluation
+- Complete strategy backtesting framework supporting long/short strategies
+- Key performance indicator calculation and visualization:
+  - Cumulative return curves
+  - Signal accuracy analysis
+  - Single trade profit/loss distribution
+- Trading signals and price trend overlay charts
 
-## Setup
+### Web Application and Visualization
+- Efficient backend services built with FastAPI
+- Responsive frontend design with Bootstrap
+- Real-time model training and backtesting execution
+- Historical backtest result browsing and comparison
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Start the web server:
-   ```bash
-   cd web
-   uvicorn main:app --reload
-   ```
+## Technical Implementation Details
 
-## Usage
+### Data Processing and Feature Engineering
+- **Multi-timeframe features**: Combination of 4-hour candles and moving average indicators
+- **Cross-asset correlation**: Introduction of BTC price data as auxiliary features
+- **Normalization**: MinMaxScaler ensuring data scale consistency
+- **Sequence construction**: 72-hour (18 time windows) sliding window sequencing
 
-1. Access the web interface at `http://localhost:8000`
-2. Use the training button to train a new LSTM model
-3. Use the backtest button to run backtesting with the latest model
-4. View detailed results in the backtest detail page
+### Deep Learning Model
+- **LSTM architecture**: Single-layer LSTM network with 64 neurons
+- **Dropout regularization**: 0.2 dropout rate to prevent overfitting
+- **Early stopping**: Automatic training termination based on validation loss
+- **Batch training**: Batch size 32 optimizing training efficiency
 
-## File Organization
+### Trading Strategy Logic
+- **Prediction comparison signals**: Trading decisions driven by difference between predicted and current prices
+- **Bidirectional strategy**: Support for long (bullish) and short (bearish) operations
+- **Model persistence**: Training model saving and loading mechanism
 
-- The system automatically organizes results by timestamp
-- Backtest results are stored in `backtest_results/[timestamp]/`
-- Results include:
-  - Equity curve plots
-  - Price and signal charts
-  - Performance metrics in JSON format
-  - Trained models
-  - Trading data
+## Technical Stack
 
-## API Endpoints
+- **Python 3.9+**: Core programming language
+- **TensorFlow/Keras**: Deep learning framework
+- **FastAPI**: Web backend services
+- **Pandas/NumPy**: Data processing
+- **Matplotlib**: Data visualization
+- **yfinance**: Market data acquisition
+- **Bootstrap**: Frontend framework
 
-- `/run-predict`: Runs ETH price prediction
-- `/run-backtest`: Executes backtesting
-- `/`: Main page
-- `/backtest/{run_id}`: Detailed backtest results view
-- `/result/{run_id}`: Detailed prediction results view
+## Project Highlights and Innovation
 
-## Notes
-
-- The system uses a 72-hour sequence length for predictions
-- Predictions are made for the next 48 hours (12 4-hour periods)
-- Trading signals are generated based on a configurable threshold
-- All results are automatically synchronized to the web interface
+1. **End-to-end solution**: Complete workflow from data acquisition to model training to strategy backtesting
+2. **Cross-asset correlation**: Leveraging correlation between BTC and ETH to enhance prediction effects
+3. **Model persistence and reuse**: Saving and loading mechanisms for trained models to enhance system efficiency
+4. **Real-time execution and visualization**: Web interface supporting one-click execution of complex algorithms and result visualization
+5. **Classified storage system**: Structured result storage and management mechanism
